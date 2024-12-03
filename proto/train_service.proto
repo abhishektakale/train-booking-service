@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+option go_package="/proto";
+
+package proto;
+
+
+// User message represents user information
+message User {
+  string first_name = 1;
+  string last_name = 2;
+  string email = 3;
+}
+
+// TicketReceipt message represents receipt details for ticket booking
+message TicketReceipt {
+  string from = 1;
+  string to = 2;
+  User user = 3;
+  float price_paid = 4;
+  string seat = 5;
+}
+
+// PurchaseTicketRequest message represents details of purchase request for a ticket
+message PurchaseTicketRequest {
+  string from = 1;
+  string to = 2;
+  User user = 3;
+}
+
+// TicketPurchaseResponse message represents details of purchased ticket
+message TicketPurchaseResponse {
+  TicketReceipt ticket = 1;
+  string message = 2;
+}
+
+// GetReceiptRequest message represents details of request details required for a receipt
+message GetReceiptRequest {
+  string user_email = 1;
+}
+
+// GetReceiptResponse message represents details of ticket receipt
+message GetReceiptResponse {
+  TicketReceipt ticket = 1;
+}
+
+// GetUsersBySectionRequest message represents request details of section required for user details
+message GetUsersBySectionRequest {
+  string section = 1; // "A" or "B"
+}
+
+// GetUsersBySectionResponse message represents details of users and their allocated seats
+message GetUsersBySectionResponse {
+  repeated UserSeatAllocation user_seats = 1;
+}
+
+// UserSeatAllocation message represents details of a user with the allocated seat details
+message UserSeatAllocation {
+  User user = 1;
+  string seat = 2;
+}
+
+// RemoveUserRequest message represents details of user to be removed
+message RemoveUserRequest {
+  string user_email = 1;
+}
+
+// RemoveUserResponse message represents response of user delete operation
+message RemoveUserResponse {
+  string message = 1;
+  User user = 2;
+}
+
+// ModifySeatRequest message represents details required to modify a users seat
+message ModifySeatRequest {
+  string user_email = 1;
+  string new_seat = 2;
+}
+
+// ModifySeatResponse message represents details of the modified seat
+message ModifySeatResponse {
+  string message = 1;
+  TicketReceipt new_ticket= 2;
+}
+
+// Service definition
+service TrainService {
+  rpc PurchaseTicket(PurchaseTicketRequest) returns (TicketPurchaseResponse);
+  rpc GetReceipt(GetReceiptRequest) returns (GetReceiptResponse);
+  rpc GetUsersBySection(GetUsersBySectionRequest) returns (GetUsersBySectionResponse);
+  rpc RemoveUser(RemoveUserRequest) returns (RemoveUserResponse);
+  rpc ModifySeat(ModifySeatRequest) returns (ModifySeatResponse);
+}
