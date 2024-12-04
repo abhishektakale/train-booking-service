@@ -6,6 +6,3 @@ run-server: build-server
 
 stop-server-image: 
 	docker-compose down
-
-run-client: 
-	go run cmd/client/main.go

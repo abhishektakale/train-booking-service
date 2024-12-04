@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"regexp"
 	"train-booking-service/dao"
 	"train-booking-service/proto"
 
@@ -23,20 +22,7 @@ func NewTrainServiceServer() *TrainServiceServer {
 	}
 }
 
-// Utility function to validate email format
-func isValidEmail(email string) bool {
-	// Simple regex for email validation
-	re := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-	return re.MatchString(email)
-}
-
 func (s *TrainServiceServer) PurchaseTicket(ctx context.Context, req *proto.PurchaseTicketRequest) (*proto.TicketPurchaseResponse, error) {
-	// Validate input
-	if !isValidEmail(req.User.Email) {
-		log.Printf("Invalid email format: %s", req.User)
-		return nil, fmt.Errorf("invalid email format: %s", req.User)
-	}
-
 	log.Printf("PurchaseTicket for User=%s initiated", req.User.Email)
 
 	ticket, err := s.dao.SaveTicket(req.User, req.From, req.To)
@@ -53,12 +39,6 @@ func (s *TrainServiceServer) PurchaseTicket(ctx context.Context, req *proto.Purc
 }
 
 func (s *TrainServiceServer) GetReceipt(ctx context.Context, req *proto.GetReceiptRequest) (*proto.GetReceiptResponse, error) {
-	// Validate email format
-	if !isValidEmail(req.UserEmail) {
-		log.Printf("Invalid email format: %s", req.UserEmail)
-		return nil, fmt.Errorf("invalid email format: %s", req.UserEmail)
-	}
-
 	log.Printf("GetReceipt: UserEmail=%s", req.UserEmail)
 
 	ticket, err := s.dao.GetTicket(req.UserEmail)
@@ -97,12 +77,6 @@ func (s *TrainServiceServer) GetUsersBySection(ctx context.Context, req *proto.G
 }
 
 func (s *TrainServiceServer) ModifySeat(ctx context.Context, req *proto.ModifySeatRequest) (*proto.ModifySeatResponse, error) {
-	// Validate email and seat
-	if !isValidEmail(req.UserEmail) {
-		log.Printf("Invalid email format: %s", req.UserEmail)
-		return nil, fmt.Errorf("invalid email format: %s", req.UserEmail)
-	}
-
 	log.Printf("ModifySeat: UserEmail=%s, NewSeat=%s", req.UserEmail, req.NewSeat)
 
 	ticket, err := s.dao.GetTicket(req.UserEmail)
@@ -119,16 +93,10 @@ func (s *TrainServiceServer) ModifySeat(ctx context.Context, req *proto.ModifySe
 
 	ticket.Seat = req.NewSeat
 	log.Printf("Seat modified successfully for user %s", req.UserEmail)
-	return &proto.ModifySeatResponse{Message: "Seat modified successfully"}, nil
+	return &proto.ModifySeatResponse{NewTicket: ticket, Message: "Seat modified successfully"}, nil
 }
 
 func (s *TrainServiceServer) RemoveUser(ctx context.Context, req *proto.RemoveUserRequest) (*proto.RemoveUserResponse, error) {
-	// Validate email
-	if !isValidEmail(req.UserEmail) {
-		log.Printf("Invalid email format: %s", req.UserEmail)
-		return nil, fmt.Errorf("invalid email format: %s", req.UserEmail)
-	}
-
 	log.Printf("RemoveUser: UserEmail=%s", req.UserEmail)
 
 	ticket, err := s.dao.GetTicket(req.UserEmail)
@@ -137,14 +105,14 @@ func (s *TrainServiceServer) RemoveUser(ctx context.Context, req *proto.RemoveUs
 		return nil, err
 	}
 
-	_, err = s.dao.DeleteTicket(ticket)
+	deletedTicket, err := s.dao.DeleteTicket(ticket)
 	if err != nil {
 		log.Printf("Error deleting ticket for user %s: %v", req.UserEmail, err)
 		return nil, err
 	}
 
 	log.Printf("User removed successfully: %s", req.UserEmail)
-	return &proto.RemoveUserResponse{Message: "User removed successfully"}, nil
+	return &proto.RemoveUserResponse{User: deletedTicket.User, Message: "User removed successfully"}, nil
 }
 
 func main() {
