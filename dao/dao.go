@@ -3,6 +3,7 @@ package dao
 import (
 	"fmt"
 	"slices"
+	"sort"
 	"sync"
 	"train-booking-service/proto"
 )
@@ -42,6 +43,7 @@ func NewTrainDAO() *TrainDAO {
 	}
 }
 
+// newUser creates a new user
 func (dao *TrainDAO) newUser(firstName, lastName, email string) *proto.User {
 	dao.users[email] = &proto.User{
 		FirstName: firstName,
@@ -52,6 +54,7 @@ func (dao *TrainDAO) newUser(firstName, lastName, email string) *proto.User {
 	return dao.users[email]
 }
 
+// newTicket creates a new ticket
 func (dao *TrainDAO) newTicket(from, to string, user *proto.User, seat string) *proto.TicketReceipt {
 	section := string(seat[0])
 
@@ -71,11 +74,6 @@ func (dao *TrainDAO) newTicket(from, to string, user *proto.User, seat string) *
 
 // AssignSeat assigns the next available seat in the least occupied section.
 func (dao *TrainDAO) assignSeat() (string, error) {
-	// // Ensure sections exist
-	// if (dao.sections[SectionA]) || dao.sectionLimits[SectionB] == 0 {
-	// 	return "", fmt.Errorf("invalid section capacities")
-	// }
-
 	// Find the section with the least allocated seats
 	section := SectionA
 	if len(dao.sections[SectionA]) > len(dao.sections[SectionB]) {
@@ -103,7 +101,7 @@ func (dao *TrainDAO) isSeatAvailable(seat string) bool {
 	return exists // If seat does not exist, it is available
 }
 
-// AllocateSeat allocates a specific seat to a user if it's available.
+// ModifySeat allocates a specific seat to a user if it's available.
 func (dao *TrainDAO) ModifySeat(oldSeat, newSeat string, email string) error {
 	dao.mu.Lock()
 	defer dao.mu.Unlock()
@@ -119,11 +117,12 @@ func (dao *TrainDAO) ModifySeat(oldSeat, newSeat string, email string) error {
 	return nil
 }
 
-// DeallocateSeat deallocates a seat when a user is removed.
+// deallocateSeat deallocates a seat when a user is removed.
 func (dao *TrainDAO) deallocateSeat(seat string) *proto.TicketReceipt {
 	section := string(seat[0])
 	deletedTicket := dao.sections[section][seat]
 	delete(dao.sections[section], seat)
+	delete(dao.users, deletedTicket.User.Email)
 	dao.availableSeats[section] = append(dao.availableSeats[section], seat)
 	slices.Sort(dao.availableSeats[section])
 	return deletedTicket
@@ -189,5 +188,8 @@ func (dao *TrainDAO) GetUsersBySection(section string) ([]*proto.TicketReceipt, 
 		// Only include users who have a ticket
 		tickets = append(tickets, ticket)
 	}
+	sort.SliceStable(tickets, func(i, j int) bool {
+		return tickets[i].Seat < tickets[j].Seat
+	})
 	return tickets, nil
 }
