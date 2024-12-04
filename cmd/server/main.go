@@ -23,19 +23,11 @@ func NewTrainServiceServer() *TrainServiceServer {
 }
 
 func (s *TrainServiceServer) PurchaseTicket(ctx context.Context, req *proto.PurchaseTicketRequest) (*proto.TicketPurchaseResponse, error) {
-	seat, err := s.dao.AssignSeat()
+
+	ticket, err := s.dao.SaveTicket(req.User, req.From, req.To)
 	if err != nil {
 		return nil, err
 	}
-
-	ticket := &proto.TicketReceipt{
-		From:      req.From,
-		To:        req.To,
-		User:      req.User,
-		PricePaid: 20.0,
-		Seat:      seat,
-	}
-	s.dao.SaveTicket(req.User.Email, ticket)
 
 	return &proto.TicketPurchaseResponse{
 		Ticket:  ticket,
@@ -55,7 +47,10 @@ func (s *TrainServiceServer) GetReceipt(ctx context.Context, req *proto.GetRecei
 
 func (s *TrainServiceServer) GetUsersBySection(ctx context.Context, req *proto.GetUsersBySectionRequest) (*proto.GetUsersBySectionResponse, error) {
 
-	sectionTickets := s.dao.GetUsersBySection(req.Section)
+	sectionTickets, err := s.dao.GetUsersBySection(req.Section)
+	if err != nil {
+		return nil, err
+	}
 	var usersInSection []*proto.UserSeatAllocation
 	for _, ticket := range sectionTickets {
 		usersInSection = append(usersInSection, &proto.UserSeatAllocation{
@@ -73,13 +68,8 @@ func (s *TrainServiceServer) ModifySeat(ctx context.Context, req *proto.ModifySe
 		return nil, err
 	}
 
-	if !s.dao.IsSeatAvailable(req.NewSeat) {
-		return nil, fmt.Errorf("seat %s is already taken", req.NewSeat)
-	}
-
 	// Deallocate the old seat and allocate the new seat
-	s.dao.DeallocateSeat(ticket.Seat)
-	if err := s.dao.AllocateSeat(req.NewSeat); err != nil {
+	if err := s.dao.ModifySeat(ticket.Seat, req.NewSeat, req.UserEmail); err != nil {
 		return nil, err
 	}
 
@@ -88,7 +78,12 @@ func (s *TrainServiceServer) ModifySeat(ctx context.Context, req *proto.ModifySe
 }
 
 func (s *TrainServiceServer) RemoveUser(ctx context.Context, req *proto.RemoveUserRequest) (*proto.RemoveUserResponse, error) {
-	_, err := s.dao.DeleteTicket(req.UserEmail)
+
+	ticket, err := s.dao.GetTicket(req.UserEmail)
+	if err != nil {
+		return nil, err
+	}
+	_, err = s.dao.DeleteTicket(ticket)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +99,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	fmt.Println("Server is listening on port 50051...")
+	fmt.Println("Server is listening on port 7001...")
 	if err := server.Serve(listener); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
