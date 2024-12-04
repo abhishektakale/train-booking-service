@@ -28,11 +28,6 @@ This project implements a **Train Booking Service** that allows users to purchas
         make run-sever
     ```
 
-    Run client to test:
-    ```bash
-        make run-client
-    ```
-
 ---
 
 ## Usage
