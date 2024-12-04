@@ -38,19 +38,48 @@ This project implements a **Train Booking Service** that allows users to purchas
 ## Usage
 
 1. **Purchase a ticket:**
-   Use the `PurchaseTicket API` to buy a ticket for a user. You'll need to provide their first name, last name and email.
-
+   ```bash
+   $ go run cmd/client/main.go -Operation="PurchaseTicket" -Data='{"from": "London", "to": "France", "user": {"first_name": "John", "last_name": "Doe", "email": "johndoe@example.com"}}'
+   ```
+   Output:
+   ```
+   Ticket purchased: Ticket purchased successfully, Seat: A1
+   ```
 2. **View receipt:**
-   After purchasing the ticket, you can retrieve the receipt details through the `GetReceipt API` using the user's email.
-
+   ```bash
+   $ go run cmd/client/main.go -Operation="GetReceipt" -Data='{"user_email": "johndoe@example.com"}'
+   ```
+   Output:
+   ```
+   Receipt: London to France, Seat: A1, Price Paid: 20.00
+   ```
 3. **View users and seats by section:**
-   To see a list of users and their allocated seats in a given section (A or B), use the `GetUsersBySection API`.
+   ```bash
+   go run cmd/client/main.go -Operation="GetUsersBySection" -Data='{"section": "A"}'
+   ```
+   Output:
+   ```
+   User List:
 
-4. **Remove a user:**
-   If you need to remove a user from the train, use the `RemoveUser API` by specifying the user's email.
-
-5. **Modify a user's seat:**
-   To change a user's seat, use the `ModifySeat API` and provide the desired seat.
+   User: John Doe (johndoe@example.com)
+   Seat: A1
+   ```
+4. **Modify a user's seat:**
+   ```bash
+   go run cmd/client/main.go -Operation="ModifySeat" -Data='{"user_email": "johndoe@example.com", "new_seat": "A2"}'
+   ```
+   Output:
+   ```
+   New Receipt: London to France, Seat: A2, Price Paid: 20.00
+   ```
+5. **Remove a user:**
+   ```bash
+   go run cmd/client/main.go -Operation="RemoveUser" -Data='{"user_email": "johndoe@example.com"}'
+   ```
+   Output:
+   ```
+   Removed User: Name: John Doe, Email: johndoe@example.com
+   ```
 
 ---
 
