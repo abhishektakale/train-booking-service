@@ -1,4 +1,4 @@
-package dao
+package adapter
 
 import (
 	"fmt"
@@ -12,8 +12,8 @@ func TestNewTrainDAO(t *testing.T) {
 	dao := NewTrainDAO()
 
 	assert.NotNil(t, dao)
-	assert.Len(t, dao.availableSeats[SectionA], SectionCap)
-	assert.Len(t, dao.availableSeats[SectionB], SectionCap)
+	assert.Len(t, dao.AvailableSeats(SectionA), SectionCap)
+	assert.Len(t, dao.AvailableSeats(SectionB), SectionCap)
 }
 
 func TestPurchaseTicketSuccessful(t *testing.T) {
