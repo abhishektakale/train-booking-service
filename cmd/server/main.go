@@ -119,7 +119,7 @@ func (s *TrainServiceServer) RemoveUser(ctx context.Context, req *proto.RemoveUs
 func main() {
 	server := grpc.NewServer()
 	proto.RegisterTrainServiceServer(server, NewTrainServiceServer())
-	eflection.Register(server)
+	reflection.Register(server)
 	listener, err := net.Listen("tcp", ":7001")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
