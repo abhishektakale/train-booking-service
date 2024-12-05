@@ -162,6 +162,45 @@ func TestDeleteTicket(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestDeleteTicket_Error_OwnedByAnotherUser(t *testing.T) {
+	dao := NewTrainDAO()
+	ticket1, err := dao.SaveTicket(&proto.User{
+		FirstName: "Alice",
+		LastName:  "Doe",
+		Email:     "alicedoe@example.com",
+	}, "London", "France")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, ticket1)
+	assert.Equal(t, "Alice", ticket1.User.FirstName)
+	assert.Equal(t, "Doe", ticket1.User.LastName)
+	assert.Equal(t, "alicedoe@example.com", ticket1.User.Email)
+	assert.Equal(t, "London", ticket1.From)
+	assert.Equal(t, "France", ticket1.To)
+	assert.Equal(t, float32(20), ticket1.PricePaid)
+	assert.Equal(t, "A1", ticket1.Seat)
+
+	ticket2, err := dao.SaveTicket(&proto.User{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "johndoe@example.com",
+	}, "London", "France")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, ticket2)
+	assert.Equal(t, "John", ticket2.User.FirstName)
+	assert.Equal(t, "Doe", ticket2.User.LastName)
+	assert.Equal(t, "johndoe@example.com", ticket2.User.Email)
+	assert.Equal(t, "London", ticket2.From)
+	assert.Equal(t, "France", ticket2.To)
+	assert.Equal(t, float32(20), ticket2.PricePaid)
+	assert.Equal(t, "B1", ticket2.Seat)
+
+	ticket1.Seat = ticket2.Seat
+
+	deletedTicket, err := dao.DeleteTicket(ticket1)
+	assert.Error(t, err)
+	assert.Nil(t, deletedTicket)
+}
+
 func TestGetUsersBySection(t *testing.T) {
 	dao := NewTrainDAO()
 	ticket1, err := dao.SaveTicket(&proto.User{
