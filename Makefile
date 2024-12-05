@@ -1,4 +1,4 @@
-run-server: build-server
+run-server:
 	docker-compose up --build -d
 
 stop-server-image: 
