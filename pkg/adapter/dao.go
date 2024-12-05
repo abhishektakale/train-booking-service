@@ -1,4 +1,4 @@
-package dao
+package adapter
 
 import (
 	"fmt"
@@ -15,7 +15,18 @@ const (
 	SectionCap = 25 // Maximum capacity for Section A and B
 )
 
+// TrainDAOAdapter defines the methods for interacting with the data store.
+type TrainDAOAdapter interface {
+	SaveTicket(user *proto.User, from string, to string) (*proto.TicketReceipt, error)
+	GetTicket(userEmail string) (*proto.TicketReceipt, error)
+	GetUsersBySection(section string) ([]*proto.TicketReceipt, error)
+	ModifySeat(oldSeat string, newSeat string, userEmail string) error
+	DeleteTicket(ticket *proto.TicketReceipt) (*proto.TicketReceipt, error)
+	AvailableSeats(section string) []string
+}
+
 // TrainDAO is the data access object for managing train seat reservations and user tickets.
+// TrainDAO is the concrete implementation of TrainDAOAdapter
 type TrainDAO struct {
 	users          map[string]*proto.User
 	sections       map[string]map[string]*proto.TicketReceipt
@@ -24,7 +35,7 @@ type TrainDAO struct {
 }
 
 // NewTrainDAO initializes a new TrainDAO instance.
-func NewTrainDAO() *TrainDAO {
+func NewTrainDAO() TrainDAOAdapter {
 	availableSeats := map[string][]string{
 		SectionA: make([]string, SectionCap),
 		SectionB: make([]string, SectionCap),
@@ -153,6 +164,10 @@ func (dao *TrainDAO) DeleteTicket(ticket *proto.TicketReceipt) (*proto.TicketRec
 	dao.mu.Lock()
 	defer dao.mu.Unlock()
 
+	if dao.sections[string(ticket.Seat[0])][ticket.Seat].User.Email != ticket.User.Email {
+		return nil, fmt.Errorf("ticket is owner by another user")
+	}
+
 	deletedTicket := dao.deallocateSeat(ticket.Seat)
 
 	return deletedTicket, nil
@@ -192,4 +207,8 @@ func (dao *TrainDAO) GetUsersBySection(section string) ([]*proto.TicketReceipt, 
 		return tickets[i].Seat < tickets[j].Seat
 	})
 	return tickets, nil
+}
+
+func (dao *TrainDAO) AvailableSeats(section string) []string {
+	return dao.availableSeats[section]
 }

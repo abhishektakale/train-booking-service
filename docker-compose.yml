@@ -4,6 +4,4 @@ services:
     ports:
       - "7001:7001"
     container_name: train-booking-service
-    volumes:
-      - .:/app
     restart: always
